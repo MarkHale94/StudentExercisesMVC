@@ -92,49 +92,99 @@ namespace StudentExerciseMVC.Controllers
         }
 
         // GET: Instructors/Edit/5
-        public ActionResult Edit(int id)
+		[HttpGet]
+        public async Task<ActionResult> Edit(int id)
         {
-            return View();
-        }
+			string sql = $@"
+			SELECT
+				i.Id,
+				i.FirstName,
+				i.LastName,
+				i.SlackHandle,
+				i.Specialty,
+				i.CohortId
+			FROM Instructor i
+			WHERE i.Id = {id}
+			";
+			using (IDbConnection conn = Connection)
+			{
+				Instructor instructor = await conn.QueryFirstAsync<Instructor>(sql);
+				return View(instructor);
+			}
+		}
 
         // POST: Instructors/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<ActionResult> Edit(int id, Instructor instructor)
         {
             try
             {
-                // TODO: Add update logic here
+				// TODO: Add update logic here
+				string sql = $@"
+                    UPDATE INSTRUCTOR
+                    SET FirstName = '{instructor.FirstName}',
+                        LastName = '{instructor.LastName}',
+                        SlackHandle = '{instructor.SlackHandle}',
+						Specialty = '{instructor.Specialty}'
+                    WHERE Id = {id}";
 
-                return RedirectToAction(nameof(Index));
-            }
+				using (IDbConnection conn = Connection)
+				{
+					int rowsAffected = await conn.ExecuteAsync(sql);
+					if (rowsAffected > 0)
+					{
+						return RedirectToAction(nameof(Index));
+					}
+					return BadRequest();
+
+				}
+			}
             catch
             {
                 return View();
             }
         }
 
-        // GET: Instructors/Delete/5
-        public ActionResult Delete(int id)
+		// GET: Instructors/Delete/5
+		[HttpGet]
+		public async Task<ActionResult> DeleteConfirm(int id)
         {
-            return View();
-        }
+			string sql = $@"
+			SELECT
+				i.Id,
+				i.FirstName,
+				i.LastName,
+				i.SlackHandle,
+				i.Specialty
+			FROM Instructor i
+			WHERE i.Id = {id}
+			";
+			using (IDbConnection conn = Connection)
+			{
+				Instructor instructor = await conn.QueryFirstAsync<Instructor>(sql);
+				return View(instructor);
+			}
+		}
 
         // POST: Instructors/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                // TODO: Add delete logic here
+		public async Task<ActionResult> Delete(int id)
+		{
+			string presql = $@"DELETE FROM StudentExercise WHERE InstructorId = {id}";
+			string sql = $@"DELETE FROM Instructor WHERE Id = {id}";
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-    }
+			using (IDbConnection conn = Connection)
+			{
+				int fkrowsAffected = await conn.ExecuteAsync(presql);
+				int rowsAffected = await conn.ExecuteAsync(sql);
+				if (rowsAffected > 0)
+				{
+					return RedirectToAction(nameof(Index));
+				}
+				throw new Exception("No rows affected");
+			}
+		}
+	}
 }

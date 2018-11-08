@@ -146,8 +146,9 @@ namespace StudentExerciseMVC.Controllers
             }
         }
 
-        // GET: Students/Delete/5
-        public async Task<ActionResult> DeleteConfirm(int id)
+		// GET: Students/Delete/5
+		[HttpGet]
+		public async Task<ActionResult> DeleteConfirm(int id)
         {
             string sql = $@"
             SELECT
@@ -172,11 +173,13 @@ namespace StudentExerciseMVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Delete(int id)
         {
-            string sql = $@"DELETE FROM Student WHERE Id = {id}";
+			string presql = $@"DELETE FROM StudentExercise WHERE StudentId = {id}";
+			string sql = $@"DELETE FROM Student WHERE Id = {id}";
 
             using (IDbConnection conn = Connection)
             {
-                int rowsAffected = await conn.ExecuteAsync(sql);
+				int fkrowsAffected = await conn.ExecuteAsync(presql);
+				int rowsAffected = await conn.ExecuteAsync(sql);
                 if (rowsAffected > 0)
                 {
                     return RedirectToAction(nameof(Index));
